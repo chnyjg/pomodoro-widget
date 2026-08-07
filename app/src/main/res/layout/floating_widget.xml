@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/floating_root"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/widget_bg">
+
+    <!-- 边缘跑马灯光点：作为底层，让上层内容（木鱼图标/按钮/时间）自然遮挡其雪花，
+         避免雪花压在图标上造成干扰；不接收触摸，事件仍穿透到上层控件。 -->
+    <com.example.pomodoro.EdgeLightView
+        android:id="@+id/edge_light"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <LinearLayout
+        android:id="@+id/floating_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="10dp">
+
+        <ImageView
+            android:id="@+id/tv_phase"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="6dp"
+            android:padding="4dp"
+            android:src="@drawable/fish_idle"
+            android:background="@drawable/btn_bg"
+            android:scaleType="centerInside" />
+
+        <TextView
+            android:id="@+id/tv_time"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minWidth="90dp"
+            android:gravity="center"
+            android:text="30:00"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:fontFamily="sans-serif-light" />
+
+        <ImageView
+            android:id="@+id/btn_reset"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="6dp"
+            android:padding="8dp"
+            android:src="@drawable/ic_reset"
+            android:background="@drawable/btn_bg"
+            android:scaleType="centerInside" />
+
+        <ImageView
+            android:id="@+id/btn_close"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="6dp"
+            android:padding="8dp"
+            android:src="@drawable/ic_close"
+            android:background="@drawable/btn_bg"
+            android:scaleType="centerInside" />
+
+    </LinearLayout>
+
+</FrameLayout>

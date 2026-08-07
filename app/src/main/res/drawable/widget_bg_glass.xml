@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 底层：半透明白色（模拟磨砂） -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#40FFFFFF" />
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+    <!-- 顶层：从上到下的极浅灰渐变（模拟光线折射 + 增加层次感） -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="#18FFFFFF"
+                android:endColor="#0AFFFFFF" />
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+</layer-list>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="14dp"
+    android:paddingEnd="10dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp">
+
+    <!-- 阶段图标：🍅 工作 / ☕ 休息 -->
+    <TextView
+        android:id="@+id/tv_phase"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="22sp"
+        android:minWidth="28dp" />
+
+    <!-- 倒计时（主显），靠右对齐，锁屏可见 -->
+    <TextView
+        android:id="@+id/tv_time"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="end"
+        android:paddingEnd="12dp"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:fontFamily="sans-serif" />
+
+    <!-- 暂停/继续 -->
+    <ImageView
+        android:id="@+id/btn_toggle"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:padding="10dp"
+        android:src="@drawable/ic_pause"
+        android:contentDescription="暂停或继续" />
+
+    <!-- 重置 -->
+    <ImageView
+        android:id="@+id/btn_reset"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:padding="11dp"
+        android:layout_marginStart="2dp"
+        android:src="@drawable/ic_reset"
+        android:contentDescription="重置" />
+
+</LinearLayout>

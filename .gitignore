@@ -1,0 +1,29 @@
+# ===== 构建产物（不要上传） =====
+*.apk
+*.aar
+*.ap_
+*.aab
+*.dex
+*.class
+bin/
+gen/
+out/
+build/
+.gradle/
+app/build/
+**/build/
+
+# ===== 本地配置（含本机 SDK 路径，不要上传） =====
+local.properties
+
+# ===== Android Studio / IntelliJ 配置 =====
+*.iml
+.idea/
+.DS_Store
+
+# ===== 签名文件（如有） =====
+*.jks
+*.keystore
+
+# ===== WorkBuddy 项目内部记忆（不要上传） =====
+.workbuddy/

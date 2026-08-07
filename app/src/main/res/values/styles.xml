@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 明确浅色主题，并禁止系统（如小米深色模式）强制反色，避免设置页白字叠浅底 -->
+    <style name="Theme.Pomodoro" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:windowBackground">#f0f0f2</item>
+        <item name="android:textColor">#1a1a1a</item>
+    </style>
+</resources>
