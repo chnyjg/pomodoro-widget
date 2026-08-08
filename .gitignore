@@ -27,3 +27,6 @@ local.properties
 
 # ===== WorkBuddy 项目内部记忆（不要上传） =====
 .workbuddy/
+
+# 部署用 SSH 私钥（绝不入库）
+.keys/
