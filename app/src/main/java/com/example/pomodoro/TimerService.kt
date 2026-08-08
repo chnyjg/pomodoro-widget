@@ -20,8 +20,10 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.media.AudioAttributes
 import android.media.Ringtone
 import android.media.RingtoneManager
+import android.media.SoundPool
 import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
@@ -82,6 +84,13 @@ class TimerService : Service() {
     private val FISH_INTERVAL_MS = 500L      // 翻帧间隔（毫秒），每帧停留 0.5 秒
     private val fishRunnable = Runnable { tickFish() }  // 翻帧任务：引用成员函数 tickFish，避免自引用初始化递归
 
+    // ---- 木鱼音效 ----
+    private var soundPool: SoundPool? = null
+    private var knockSoundId = 0          // SoundPool.load 后返回的音效 ID
+    private var knockStreamId = 0         // 最近一次 play() 返回的流 ID（maxStreams=1 时无需 stop，保留以备）
+    private var soundLoaded = false       // 资源是否加载完成（未完成前 play 会静默丢音）
+    private var knockEnabled = true       // 木鱼敲击声开关（对应设置页 prefKnock）
+
     /** 翻一帧并调度下一次（运行中循环调用） */
     private fun tickFish() {
         if (!fishAnimRunning) return         // 已停止则不再调度
@@ -94,6 +103,7 @@ class TimerService : Service() {
         floatingView?.findViewById<ImageView>(R.id.tv_phase)?.setImageResource(
             if (fishIdle) R.drawable.fish_idle else R.drawable.fish_hit
         )
+        if (!fishIdle) playKnock()   // 显示"敲击"帧时配合木鱼声（同回调内触发，与画面同步）
         handler.postDelayed(fishRunnable, FISH_INTERVAL_MS)  // 用 token，可被 removeCallbacks
     }
 
@@ -128,6 +138,16 @@ class TimerService : Service() {
         handler.removeCallbacks(fishRunnable)   // 关键：立即取消已 post 的任务
     }
 
+    /** 播放木鱼敲击声（短音效，SoundPool 预加载，近乎瞬时）；开关关闭或资源未就绪则静默不崩 */
+    private fun playKnock() {
+        if (!knockEnabled || !soundLoaded) return
+        try {
+            knockStreamId = soundPool?.play(knockSoundId, 1f, 1f, 1, 0, 1f) ?: 0
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     // ---- 番茄计数 ----
     private var tomatoDate = ""          // 最近一次计数的本地日期 YYYY-MM-DD
     private var tomatoCount = 0          // 当日已完成番茄数
@@ -139,6 +159,22 @@ class TimerService : Service() {
         componentName = ComponentName(this, PomodoroWidget::class.java)
         createChannel()   // 通知渠道创建是幂等的，放 onCreate 一次即可，不必每次 onStartCommand 重复执行
         loadState()
+
+        // 木鱼音效：SoundPool 预加载一次，之后 play() 近乎瞬时（<20ms），解决此前 MediaPlayer 每击新建导致的滞后/丢音
+        soundPool = SoundPool.Builder()
+            .setMaxStreams(1)   // 木鱼声不允许叠加，最多同时 1 声
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_GAME)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            )
+            .build()
+        knockSoundId = soundPool!!.load(this, R.raw.knock_wood, 1)
+        soundPool!!.setOnLoadCompleteListener { _, sampleId, status ->
+            if (status == 0 && sampleId == knockSoundId) soundLoaded = true
+        }
+        // knockEnabled 已在 loadState()->applyConfig() 中读取，此处无需重复
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -622,6 +658,7 @@ class TimerService : Service() {
         prefRing = prefs.getBoolean("prefRing", true)
         prefVibrate = prefs.getBoolean("prefVibrate", true)
         showEdgeLight = prefs.getBoolean("showEdgeLight", true)   // 读取边缘光点开关，否则永远停在默认 true（即使设置页关掉了）
+        knockEnabled = prefs.getBoolean("prefKnock", true)         // 木鱼敲击声开关
         bgMode = if (prefs.contains("bgMode")) prefs.getInt("bgMode", BG_MODE_NORMAL)
                  else if (prefs.getBoolean("transparent", false)) BG_MODE_TRANSPARENT
                  else BG_MODE_NORMAL
@@ -757,6 +794,8 @@ class TimerService : Service() {
         handler.removeCallbacks(tickRunnable)
         handler.removeCallbacks(alertTimeout)
         stopFishAnim()
+        soundPool?.release()  // 释放音效池，避免 AudioTrack 资源泄漏
+        soundPool = null
         ringtone?.stop()      // 服务销毁时务必停掉仍在播放的铃声，避免进程残留继续响
         ringtone = null
         alerting = false
