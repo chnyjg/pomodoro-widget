@@ -20,7 +20,6 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.media.MediaPlayer
 import android.media.Ringtone
 import android.media.RingtoneManager
 import android.provider.Settings
@@ -70,7 +69,6 @@ class TimerService : Service() {
     private var prefRing = true          // 时间到是否响铃
     private var prefVibrate = true       // 时间到是否震动
     private var showEdgeLight = true     // 是否显示边缘跑马灯光点
-    private var knockEnabled = true      // 木鱼敲击声开关（工作期翻帧时配合播放）
 
     // ---- 响铃状态 ----
     private var ringtone: Ringtone? = null  // 当前正在播放的铃声（需保留引用以便停止）
@@ -96,20 +94,7 @@ class TimerService : Service() {
         floatingView?.findViewById<ImageView>(R.id.tv_phase)?.setImageResource(
             if (fishIdle) R.drawable.fish_idle else R.drawable.fish_hit
         )
-        if (!fishIdle) playKnock()   // 显示"敲击"帧时配合木鱼声
         handler.postDelayed(fishRunnable, FISH_INTERVAL_MS)  // 用 token，可被 removeCallbacks
-    }
-
-    /** 播放木鱼敲击声（短音效）；开关关闭或资源缺失则静默 */
-    private fun playKnock() {
-        if (!knockEnabled) return
-        try {
-            val mp = MediaPlayer.create(this, R.raw.knock_wood)
-            mp?.setOnCompletionListener { it.release() }
-            mp?.start()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     /** 仅刷新当前应显示的静态帧（每秒 updateFloating 调用，不启停循环） */
@@ -637,7 +622,6 @@ class TimerService : Service() {
         prefRing = prefs.getBoolean("prefRing", true)
         prefVibrate = prefs.getBoolean("prefVibrate", true)
         showEdgeLight = prefs.getBoolean("showEdgeLight", true)   // 读取边缘光点开关，否则永远停在默认 true（即使设置页关掉了）
-        knockEnabled = prefs.getBoolean("prefKnock", true)        // 木鱼敲击声开关
         bgMode = if (prefs.contains("bgMode")) prefs.getInt("bgMode", BG_MODE_NORMAL)
                  else if (prefs.getBoolean("transparent", false)) BG_MODE_TRANSPARENT
                  else BG_MODE_NORMAL

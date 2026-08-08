@@ -41,7 +41,6 @@ class MainActivity : AppCompatActivity() {
         switchRing.isChecked = prefs.getBoolean("prefRing", true)
         switchVib.isChecked = prefs.getBoolean("prefVibrate", true)
         switchEdge.isChecked = prefs.getBoolean("showEdgeLight", true)
-        findViewById<Switch>(R.id.switch_knock).isChecked = prefs.getBoolean("prefKnock", true)
 
         val tvWork = findViewById<TextView>(R.id.tv_work)
         val tvBreak = findViewById<TextView>(R.id.tv_break)
@@ -122,7 +121,6 @@ class MainActivity : AppCompatActivity() {
             putBoolean("prefRing", findViewById<Switch>(R.id.switch_ring).isChecked)
             putBoolean("prefVibrate", findViewById<Switch>(R.id.switch_vibrate).isChecked)
             putBoolean("showEdgeLight", findViewById<Switch>(R.id.switch_edge_light).isChecked)
-            putBoolean("prefKnock", findViewById<Switch>(R.id.switch_knock).isChecked)
             putInt("bgMode", bgMode)
             // 今日番茄数：以手动编辑值覆盖当日计数基准（跨日时同步刷新日期）
             putString("tomatoDate", TimerService.todayStr())
