@@ -1,6 +1,7 @@
 package com.example.pomodoro
 
 import android.Manifest
+import android.app.NotificationManager
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -128,6 +129,20 @@ class MainActivity : AppCompatActivity() {
             putString("tomatoDate", TimerService.todayStr())
             putInt("tomatoCount", todayCount)
         }.apply()
+
+        // 静音/勿扰(DND)穿透引导：若开启了响铃/震动但应用尚未获「修改勿扰设置」授权，
+        // 仅首次提示并打开授权页，授权后 alert() 才能在静音/DND 下照常提醒（不阻塞保存）
+        val ringOn = findViewById<Switch>(R.id.switch_ring).isChecked
+        val vibOn = findViewById<Switch>(R.id.switch_vibrate).isChecked
+        if ((ringOn || vibOn) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+            && !getSystemService(NotificationManager::class.java).isNotificationPolicyAccessGranted
+            && !prefs.getBoolean("dndGuideShown", false)
+        ) {
+            prefs.edit().putBoolean("dndGuideShown", true).apply()
+            Toast.makeText(this, "如需静音/勿扰时也提醒，请在设置中授权本应用「修改勿扰设置」", Toast.LENGTH_LONG).show()
+            try { startActivity(Intent(NotificationManager.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)) } catch (_: Exception) {}
+        }
+
         launchService()
         finish()
     }

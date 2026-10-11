@@ -19,6 +19,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.VibrationEffect
+import android.os.VibrationAttributes
 import android.os.Vibrator
 import android.media.AudioAttributes
 import android.media.Ringtone
@@ -73,6 +74,7 @@ class TimerService : Service() {
     private var showEdgeLight = true     // 是否显示边缘跑马灯光点
 
     // ---- 响铃状态 ----
+    private var canBypassDnd = false        // 是否已获「修改勿扰设置」授权（静音/DND 下仍提醒的前提）
     private var ringtone: Ringtone? = null  // 当前正在播放的铃声（需保留引用以便停止）
     private var alerting = false            // 是否正处于“时间到”提醒中（响铃/震动）
     private val ALERT_TIMEOUT_MS = 15_000L  // 响铃自动停止的超时（毫秒），避免一直循环响
@@ -158,6 +160,10 @@ class TimerService : Service() {
         appWidgetManager = AppWidgetManager.getInstance(this)
         componentName = ComponentName(this, PomodoroWidget::class.java)
         createChannel()   // 通知渠道创建是幂等的，放 onCreate 一次即可，不必每次 onStartCommand 重复执行
+        // 检测是否已获「勿扰策略」授权：授权后 alert() 可穿透静音/勿扰(DND)照常响铃+震动
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            canBypassDnd = getSystemService(NotificationManager::class.java).isNotificationPolicyAccessGranted
+        }
         loadState()
 
         // 木鱼音效：SoundPool 预加载一次，之后 play() 近乎瞬时（<20ms），解决此前 MediaPlayer 每击新建导致的滞后/丢音
@@ -291,12 +297,22 @@ class TimerService : Service() {
         if (isCompensating) return   // 补偿历史流逝时间时不响铃/震动，避免一次性连响多次
         if (prefVibrate) {
             val v = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                v.vibrate(VibrationEffect.createWaveform(
-                    longArrayOf(0, 300, 150, 300, 150, 500), -1))
+            val pattern = longArrayOf(0, 300, 150, 300, 150, 500)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // Android 12+：用 VibrationAttributes(USAGE_ALARM) 穿透 DND
+                v.vibrate(
+                    VibrationEffect.createWaveform(pattern, -1),
+                    VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ALARM)
+                )
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // Android 8~11：用 AudioAttributes(USAGE_ALARM) 穿透 DND
+                v.vibrate(
+                    VibrationEffect.createWaveform(pattern, -1),
+                    AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build()
+                )
             } else {
                 @Suppress("DEPRECATION")
-                v.vibrate(longArrayOf(0, 300, 150, 300, 150, 500), -1)
+                v.vibrate(pattern, -1)
             }
         }
         if (prefRing) {
@@ -305,7 +321,16 @@ class TimerService : Service() {
                 ringtone?.stop()
                 var uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 if (uri == null) uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                ringtone = RingtoneManager.getRingtone(this, uri)?.apply { play() }
+                ringtone = RingtoneManager.getRingtone(this, uri)?.apply {
+                    // 走闹钟声轨(USAGE_ALARM)：独立于铃声音量，静音非勿扰时仍发声
+                    // 已获「修改勿扰设置」授权时再加穿透标志，DND 下也照响
+                    val ab = AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    if (canBypassDnd) ab.setFlags(AudioAttributes.FLAG_BYPASS_INTERRUPTION_POLICY)
+                    setAudioAttributes(ab.build())
+                    play()
+                }
             } catch (_: Exception) { }
         }
         // 只要开启了任一提醒（响铃或震动），就标记正在提醒：
