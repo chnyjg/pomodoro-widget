@@ -13,6 +13,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.Switch
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -140,7 +141,7 @@ class MainActivity : AppCompatActivity() {
         ) {
             prefs.edit().putBoolean("dndGuideShown", true).apply()
             Toast.makeText(this, "如需静音/勿扰时也提醒，请在设置中授权本应用「修改勿扰设置」", Toast.LENGTH_LONG).show()
-            try { startActivity(Intent(NotificationManager.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)) } catch (_: Exception) {}
+            try { startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)) } catch (_: Exception) {}
         }
 
         launchService()

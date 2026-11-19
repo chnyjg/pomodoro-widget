@@ -327,7 +327,9 @@ class TimerService : Service() {
                     val ab = AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_ALARM)
                         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    if (canBypassDnd) ab.setFlags(AudioAttributes.FLAG_BYPASS_INTERRUPTION_POLICY)
+                    // FLAG_BYPASS_INTERRUPTION_POLICY=4 是 AOSP 隐藏常量（公开 SDK 未暴露，只能用字面值）
+                    // 仅当已获「修改勿扰设置」授权时才加，让静音/DND 下也照响
+                    if (canBypassDnd) ab.setFlags(4)
                     setAudioAttributes(ab.build())
                     play()
                 }
